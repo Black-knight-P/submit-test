@@ -1,6 +1,8 @@
 buildscript {
 	ext {
 		queryDslVersion = "5.0.0"
+		gradleMapstructVersion = "0.2.0"
+		mapstructVersion = "1.5.1.Final"
 	}
 }
 
@@ -40,18 +42,11 @@ repositories {
 dependencies {
 	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
 	implementation 'org.springframework.boot:spring-boot-starter-web'
-	implementation 'org.projectlombok:lombok:1.18.18'
 	implementation 'junit:junit:4.13.1'
 	implementation 'org.springframework.boot:spring-boot-starter-validation'
 	implementation "org.mockito:mockito-core:3.+"
-	// mapstruct 추가 (Lombok 보다 먼저)
-	implementation 'org.mapstruct:mapstruct:1.4.2.Final'
-	annotationProcessor 'org.mapstruct:mapstruct-processor:1.4.2.Final'
-
-	compileOnly 'org.projectlombok:lombok'
 	developmentOnly 'org.springframework.boot:spring-boot-devtools'
 	runtimeOnly 'com.h2database:h2'
-	annotationProcessor 'org.projectlombok:lombok'
 	testImplementation 'org.springframework.boot:spring-boot-starter-test'
 	testImplementation "org.mockito:mockito-core:3.+"
 	testImplementation('org.junit.jupiter:junit-jupiter:5.4.0')
@@ -63,10 +58,18 @@ dependencies {
 	// Swagger 추가
 	implementation 'io.springfox:springfox-boot-starter:3.0.0'
 
+	// mapstruct, lombok
+	compileOnly 'org.projectlombok:lombok'
+	annotationProcessor 'org.projectlombok:lombok'
+	implementation "org.projectlombok:lombok-mapstruct-binding:${gradleMapstructVersion}"
+
+	implementation "org.mapstruct:mapstruct:${mapstructVersion}"
+	annotationProcessor "org.mapstruct:mapstruct-processor:${mapstructVersion}"
+
+
 }
 
 //querydsl 추가
-//def querydslDir = 'src/main/generated'
 def querydslDir = "$buildDir/generated/querydsl"
 
 querydsl {

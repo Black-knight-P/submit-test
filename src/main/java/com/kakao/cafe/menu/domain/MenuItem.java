@@ -1,9 +1,6 @@
 package com.kakao.cafe.menu.domain;
 
-import lombok.AccessLevel;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.ToString;
+import lombok.*;
 import lombok.experimental.SuperBuilder;
 
 import javax.persistence.*;
@@ -13,7 +10,7 @@ import java.util.Objects;
 @SuperBuilder
 @Getter
 @Entity
-@NoArgsConstructor(access = AccessLevel.PROTECTED)
+@NoArgsConstructor
 @Table(name = "menu_item")
 public class MenuItem {
 
@@ -27,6 +24,12 @@ public class MenuItem {
 
     @Column(name = "price")
     private Integer price;
+
+    @Builder
+    public MenuItem (String name, Integer price) {
+        this.name = name;
+        this.price = price;
+    }
 
     @Override
     public boolean equals(Object o) {
