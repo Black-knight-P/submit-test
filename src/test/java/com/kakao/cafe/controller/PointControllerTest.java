@@ -59,7 +59,7 @@ public class PointControllerTest {
 
     @Test
     @Order(3)
-    @DisplayName("회원포인트조회API 테스트 오류")
+    @DisplayName("회원포인트조회API 테스트 오류 미존재아이디")
     public void 회원포인트조회_API_테스트_미존재아이디() throws Exception {
         mvc.perform(
                 get("/point")
@@ -72,7 +72,7 @@ public class PointControllerTest {
 
     @Test
     @Order(4)
-    @DisplayName("회원포인트충전 API 테스트 오류")
+    @DisplayName("회원포인트충전 API 테스트 오류 미존재아이디")
     public void 회원포인트충전_API_테스트_미존재아이디() throws Exception {
 
         JSONObject jsonObject = new JSONObject();

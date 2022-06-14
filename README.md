@@ -72,7 +72,7 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
     - id (PK), userId(unique), userName, password, point_wallet_id(FK)
 - PointWallet (포인트지갑)
     - 구매고객과 1:1 Mapping
-    - id (PK), balance(잔액)
+    - id (PK), balance(잔액), version
 - MenuItem (메뉴 상품)
     - Cafe에서 판매중인 상품
     - id (PK), name, price
@@ -82,7 +82,7 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
 
 ## 구현 내용과 해결 전략
 
-- 동시성 이슈와 데이터 일관성의 처리를 위해 고객 포인트의 충전과 차감 거래시, Transaction 격리 수준을 고려하여 구현하였다.
+- 동시성 이슈와 데이터 일관성의 처리를 위해 고객 포인트의 충전과 차감 거래시, JPA의 @Version을 이용하여 낙관적인 Lock 방식으로 해결하였다.
 - 주문 내역에 대한 외부 수집서버 실시간 전송에 대해서 이벤트 기반 비동기 처리로 구현하였다.
 
 ### 1. 커피 메뉴 목록 조회 API
@@ -179,13 +179,35 @@ POST /point/charge HTTP/1.1
 }
 ```
 
-- 동시성 이슈와 데이터의 일관성을 처리 하기 위해, 충전시에는 Transaction의 isolation을 `REPEATABLE_READ` 로 설정하였다.
+- 동시성 이슈와 데이터의 일관성을 처리 하기 위해, 충전시에는 JPA의 @Version을 사용하여 낙관적 Lock 방식으로 구현하였다.
 
 ```java
-@Transactional(isolation = Isolation.REPEATABLE_READ)
+@Transactional
 public void charge(String userId, Integer points) throws Exception {
     Customer customer = findCustomerByUserId(userId);
     customer.chargePoints(points);
+}
+```
+- 동시성 처리를 위한 JPA @Version 사용하였다. (낙관적 Lock)
+```java
+@ToString
+@Slf4j
+@Entity
+@Getter
+@Table(name = "point_wallet")
+public class PointWallet {
+
+    @Id
+    @Column(name = "wallet_id")
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Embedded
+    private Point point;
+
+    @Version
+    @Column(name = "version", columnDefinition = "integer DEFAULT 0", nullable = false)
+    private long version = 0L;
 }
 ```
 
@@ -250,7 +272,7 @@ POST /order/make HTTP/1.1
 }
 ```
 
-- 동시성 이슈와 데이터의 일관성을 처리 하기 위해, 포인트 차감시에는 Transaction의 isolation을 `REPEATABLE_READ` 로 설정하였다.
+- 동시성 이슈와 데이터의 일관성을 처리 하기 위해, 포인트 차감시에는 JPA의 @Version을 사용하여 낙관적 Lock을 이용하여 구현하였다.
 - 정상 주문 건에 대한 수집 서버 전송을 위해 `Event 기반`으로 `비동기` 처리하였다.
     - 수집서버 전송이 주문 및 결제 거래 Transaction에 영향이 없도록 구현하였다.
     - 수집서버 전송 에러시, 구매 이력을 파일로 남겨 후행 처리가 가능 하도록 구현하였다.
@@ -272,7 +294,7 @@ public class OrderService {
 
   private final ApplicationEventPublisher applicationEventPublisher;
 
-  @Transactional(isolation = Isolation.REPEATABLE_READ)
+  @Transactional
   public Order makeOrderProcess(String userId, Long menuId) throws Exception {
     Customer customer = customerService.findByUserId(userId);
     MenuItem orderedMenu = menuService.findByMenuId(menuId);
@@ -362,35 +384,35 @@ GET /menu/popular-coffee HTTP/1.1
 - 주문 집계을 통한 인기 상품 추출은 QueryDSL로 해결하였다.
     - 개별 커피의 판매 내역 정확한 카운트가 필요 했고, 그중 Top 3의 MenuItem을 리턴하도록 구현하였다.
     - Projections.fields 로 QueryDSL 결과를 DTO로 바로 Mapping 처리하였다.
-
+- Transaction의 isolation 을 `READ_COMMITTED`로 설정하여 메뉴별 주문 횟수가 정확하게 리턴 되도록 구현하였다.
 ```java
 @RequiredArgsConstructor
 @Repository
 public class MenuCustomQueryRepository {
 
-    private final JPAQueryFactory jpaQueryFactory;
+  private final JPAQueryFactory jpaQueryFactory;
 
-    /**
-     * 7일간 인기 상품 추출 Query
-     * @return List<PopularMenuItemDto>
-     */
-    @Transactional
-    public List<PopularMenuItemDto> getPopularMenus() {
+  /**
+   * 7일간 인기 상품 추출 Query
+   * @return List<PopularMenuItemDto>
+   */
+  @Transactional(isolation = Isolation.READ_COMMITTED)
+  public List<PopularMenuItemDto> getPopularMenus() {
 
-        NumberPath<Long> count = Expressions.numberPath(Long.class, "saleCount");
-        return jpaQueryFactory
-                .select(Projections.fields(PopularMenuItemDto.class,
-                        menuItem.id.as("menuItemId"),
-                        menuItem.name.as("menuName"),
-                        menuItem.count().as(count)))
-                .from(order)
-                .leftJoin(menuItem).on(order.menuItem.id.eq(menuItem.id))
-                .where(order.orderDateTime.between(LocalDateTime.of(LocalDate.now().minusDays(7), LocalTime.MIN), LocalDateTime.of(LocalDate.now(), LocalTime.MAX)))
-                .groupBy(menuItem.id)
-                .orderBy(menuItem.count().desc())
-                .limit(3L)
-                .fetch();
-    }
+    NumberPath<Long> count = Expressions.numberPath(Long.class, "saleCount");
+    return jpaQueryFactory
+            .select(Projections.fields(PopularMenuItemDto.class,
+                    menuItem.id.as("menuItemId"),
+                    menuItem.name.as("menuName"),
+                    menuItem.count().as(count)))
+            .from(order)
+            .leftJoin(menuItem).on(order.menuItem.id.eq(menuItem.id))
+            .where(order.orderDateTime.between(LocalDateTime.of(LocalDate.now().minusDays(7), LocalTime.MIN), LocalDateTime.of(LocalDate.now(), LocalTime.MAX)))
+            .groupBy(menuItem.id)
+            .orderBy(menuItem.count().desc())
+            .limit(3L)
+            .fetch();
+  }
 }
 ```
 

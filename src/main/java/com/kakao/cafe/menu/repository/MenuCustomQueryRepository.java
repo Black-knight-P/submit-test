@@ -7,6 +7,7 @@ import com.querydsl.core.types.dsl.NumberPath;
 import com.querydsl.jpa.impl.JPAQueryFactory;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
+import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
@@ -27,7 +28,7 @@ public class MenuCustomQueryRepository {
      * 7일간 인기 상품 추출 Query
      * @return List<PopularMenuItemDto>
      */
-    @Transactional
+    @Transactional(isolation = Isolation.READ_COMMITTED)
     public List<PopularMenuItemDto> getPopularMenus() {
 
         NumberPath<Long> count = Expressions.numberPath(Long.class, "saleCount");

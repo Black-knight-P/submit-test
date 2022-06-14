@@ -34,7 +34,7 @@ public class OrderControllerTest {
 
     @Test
     @Order(1)
-    @DisplayName("주문 성공 후, 수집서버 호출 검증")
+    @DisplayName("주문 API 테스트 성공 후, 수집서버 호출 검증")
     public void 주문_API_테스트_수집서버_전송_테스트() throws Exception {
 
         JSONObject jsonObject = new JSONObject();
@@ -104,7 +104,7 @@ public class OrderControllerTest {
     }
 
     @Test
-    @DisplayName("주문 API 테스트 검증")
+    @DisplayName("주문 API 테스트 필드 검증")
     public void 주문_API_테스트_필드_검증() throws Exception {
 
         JSONObject jsonObject = new JSONObject();

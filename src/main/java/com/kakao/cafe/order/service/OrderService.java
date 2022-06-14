@@ -29,7 +29,7 @@ public class OrderService {
 
     private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public Order makeOrderProcess(String userId, Long menuId) throws Exception {
         Customer customer = customerService.findByUserId(userId);
         MenuItem orderedMenu = menuService.findByMenuId(menuId);
@@ -41,7 +41,6 @@ public class OrderService {
         // 포인트 차감 처리
         pointService.deduct(userId, order.cost());
         Order completedOrder = orderRepository.save(order);
-
         log.debug("Make Order Process COMPLETE : {}", completedOrder);
 
         // 수집 플랫폼 서버 전송 비동기 이벤트 처리

@@ -1,8 +1,6 @@
 package com.kakao.cafe.point.domain;
 
-import lombok.AccessLevel;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
 import lombok.ToString;
 import lombok.extern.slf4j.Slf4j;
 
@@ -22,6 +20,10 @@ public class PointWallet {
 
     @Embedded
     private Point point;
+
+    @Version
+    @Column(name = "version", nullable = false)
+    private long version = 0L;
 
     public PointWallet() {
         this.point = new Point();

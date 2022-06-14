@@ -4,7 +4,6 @@ import com.kakao.cafe.customer.domain.Customer;
 import com.kakao.cafe.customer.service.CustomerService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Isolation;
 import org.springframework.transaction.annotation.Transactional;
 
 
@@ -15,7 +14,7 @@ public class PointService {
 
     private final CustomerService customerService;
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void deduct(String userId, Integer points) throws Exception {
         Customer customer = findCustomerByUserId(userId);
         customer.deductPoints(points);
@@ -27,7 +26,7 @@ public class PointService {
         return customer.getMyPointBalance();
     }
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
+    @Transactional
     public void charge(String userId, Integer points) throws Exception {
         Customer customer = findCustomerByUserId(userId);
         customer.chargePoints(points);
