@@ -69,10 +69,10 @@ public class CustomerTest {
                 .pointWallet(new PointWallet())
                 .build();
 
+        //when
         int amount = 10000;
         int minusAmount = 100;
         customer.chargePoints(amount);
-        //when
         customer.deductPoints(minusAmount);
 
         //then

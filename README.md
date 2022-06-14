@@ -138,8 +138,8 @@ GET /menu/all HTTP/1.1
 public class MenuService {
     private final MenuItemRepository menuItemRepositor
     private final MenuCustomQueryRepository menuCustom
-    
-	/***
+  
+    /***
      * 판매중인 메뉴 전체를 조회한다.
      * @return List<MenuItem>
      */
