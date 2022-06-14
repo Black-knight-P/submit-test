@@ -11,8 +11,6 @@
 - [기타](#기타)
 - [체크 리스트](#체크-리스트)
 
----
-
 ## 개발 환경
 
 - 기본 환경
@@ -29,8 +27,6 @@
 
 ## 빌드 및 실행 방법
 
----
-
 ### 터미널 환경
 
 - java, git 은 설치 되어 있어야 한다.
@@ -46,8 +42,6 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
 
 ## 기능 요구 사항
 
----
-
 - 개발 API 목록
     1. `커피 메뉴 목록 조회 API`
     2. `포인트 충전 하기 API`
@@ -61,8 +55,6 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
 
 ## 기술 제약 사항
 
----
-
 - 개발 언어는 Java, Kotlin 중 익숙한 개발 언어를 선택하여 과제를 진행해주시면 됩니다.
 - 설계 내용과 설계의 이유, 핵심 문제해결 전략 및 분석한 내용을 작성하여 "readme.md" 파일을 작성합니다.
 - 데이터 베이스 제약은 없습니다.
@@ -70,8 +62,6 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
 - 에러응답, 에러코드는 자유롭게 정의해주세요.
 
 ## 엔티티 다이어그램
-
----
 
 - Entity를 비교적 심플하게 구성하였다.
 
@@ -91,8 +81,6 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
     - orderId (PK), orderDateTime, customerId(FK), menuItemId(FK)
 
 ## 구현 내용과 해결 전략
-
----
 
 - 동시성 이슈와 데이터 일관성의 처리를 위해 고객 포인트의 충전과 차감 거래시, Transaction 격리 수준을 고려하여 구현하였다.
 - 주문 내역에 대한 실시간 전송에 대해서 이벤트 기반 비동기 처리로 구현하였다.
@@ -401,21 +389,16 @@ public class MenuCustomQueryRepository {
 
 ## 기타
 
----
-
 ### Swagger API 테스트 방법
 - Spring Appication 구동 후, [Swagger](http://localhost:8080/swagger-ui/index.html) 접속 ([http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html))
 
 ![Sagger](img/swagger.png)
 
-### IntelliJ 테스트코드 실행 오류 발생시, 
----
+### IntelliJ 테스트코드 실행 오류 발생시,
 - Preferences → Build,Execution, Deployment → Build Tools → Gradle 설정 변경
 ![intellJ-setting](img/intelliJ-setting.png)
 
 ## 체크 리스트
-
----
 
 - [x]  다수의 서버에 다수의 인스턴스로 동작하더라도 기능에 문제가 없는가
 - [x]  각 기능 및 제약사항에 대한 단위테스트를 반드시 작성이 되어 있는가
