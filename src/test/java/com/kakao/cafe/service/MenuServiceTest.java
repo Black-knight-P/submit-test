@@ -33,11 +33,18 @@ public class MenuServiceTest {
     public void 전체_메뉴_목록_조회_테스트() {
 
         //given
-        MenuItem menuItem1 = MenuItem.builder().id(1L).name("아메리카노").price(3800).build();
-        MenuItem menuItem2 = MenuItem.builder().id(2L).name("카페라떼").price(3800).build();
-        MenuItem menuItem3 = MenuItem.builder().id(3L).name("카페모카").price(3800).build();
-        MenuItem menuItem4 = MenuItem.builder().id(4L).name("카푸치노").price(3800).build();
-        MenuItem menuItem5 = MenuItem.builder().id(5L).name("바닐라라떼").price(3800).build();
+        MenuItem menuItem1 = MenuItem.builder().name("아메리카노").price(3800).build();
+        MenuItem menuItem2 = MenuItem.builder().name("카페라떼").price(3800).build();
+        MenuItem menuItem3 = MenuItem.builder().name("카페모카").price(3800).build();
+        MenuItem menuItem4 = MenuItem.builder().name("카푸치노").price(3800).build();
+        MenuItem menuItem5 = MenuItem.builder().name("바닐라라떼").price(3800).build();
+
+        ReflectionTestUtils.setField(menuItem1, "id", 1L);
+        ReflectionTestUtils.setField(menuItem2, "id", 2L);
+        ReflectionTestUtils.setField(menuItem3, "id", 3L);
+        ReflectionTestUtils.setField(menuItem4, "id", 4L);
+        ReflectionTestUtils.setField(menuItem5, "id", 5L);
+
 
         //mocking
         when(menuItemRepository.findAll()).thenReturn(List.of(menuItem1, menuItem2, menuItem3, menuItem4, menuItem5));

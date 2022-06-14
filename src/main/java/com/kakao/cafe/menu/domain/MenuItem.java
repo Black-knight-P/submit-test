@@ -1,13 +1,14 @@
 package com.kakao.cafe.menu.domain;
 
-import lombok.*;
-import lombok.experimental.SuperBuilder;
+import lombok.Builder;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.ToString;
 
 import javax.persistence.*;
 import java.util.Objects;
 
 @ToString
-@SuperBuilder
 @Getter
 @Entity
 @NoArgsConstructor

@@ -53,10 +53,10 @@ public class OrderServiceTest {
 
         //given
         MenuItem menuItem = MenuItem.builder()
-                .id(1L)
                 .name("아메리카노")
                 .price(3800)
                 .build();
+        ReflectionTestUtils.setField(menuItem, "id", 1L);
 
         Point point = new Point();
         point.charge(10000);

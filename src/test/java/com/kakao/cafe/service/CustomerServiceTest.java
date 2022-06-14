@@ -37,6 +37,7 @@ public class CustomerServiceTest {
     @DisplayName("회원등록_테스트")
     public void 회원등록_테스트() throws Exception {
 
+        //given
         Customer customer = Customer.builder()
                 .userId("jhpar8")
                 .userName("박지호")
@@ -46,14 +47,17 @@ public class CustomerServiceTest {
 
         ReflectionTestUtils.setField(customer, "id", 1L);
 
+        //mocking
         given(customerRepository.save(any())).willReturn(customer);
         given(pointWalletRepository.save(any())).willReturn(new PointWallet());
         when(customerRepository.findById(any())).thenReturn(java.util.Optional.of(customer));
 
+        //when
         Customer register = customerService.register("jhpar8", "박지호", "1234");
         Customer findCustomer = customerRepository.findById(register.getId())
                 .orElseThrow(() -> new CustomException(ErrorCode.NOT_FOUND_CUSTOMER));
 
+        //then
         assertEquals(register.getUserId(), findCustomer.getUserId());
         assertEquals(register, findCustomer);
     }
