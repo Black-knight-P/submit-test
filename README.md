@@ -23,7 +23,7 @@
     - JPA + QueryDSL
     - H2
     - Gradle
-    - Junit4
+    - Junit5
 
 ## 빌드 및 실행 방법
 
