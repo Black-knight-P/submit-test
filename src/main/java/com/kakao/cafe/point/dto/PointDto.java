@@ -6,6 +6,7 @@ import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import javax.validation.constraints.NotEmpty;
+import javax.validation.constraints.NotNull;
 
 @Builder
 @AllArgsConstructor
@@ -14,6 +15,6 @@ import javax.validation.constraints.NotEmpty;
 public class PointDto {
     @NotEmpty
     private String userId;     // 고객 식별 ID
-    @NotEmpty
+    @NotNull
     private Integer points;    // 충전 금액
 }

@@ -5,17 +5,17 @@ import com.kakao.cafe.customer.service.CustomerService;
 import com.kakao.cafe.point.domain.Point;
 import com.kakao.cafe.point.domain.PointWallet;
 import com.kakao.cafe.point.service.PointService;
-import org.junit.Test;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.util.ReflectionTestUtils;
 
-import static org.junit.Assert.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.Mockito.*;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class PointServiceTest {
 
     @InjectMocks
@@ -78,7 +78,7 @@ public class PointServiceTest {
     }
 
     @Test
-    public void 포인트를_차감_한다() throws Exception {
+    public void 포인트를_차감한다() throws Exception {
 
         //given
         Integer amount = 10000;

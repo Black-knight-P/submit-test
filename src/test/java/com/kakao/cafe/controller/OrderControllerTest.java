@@ -1,28 +1,54 @@
 package com.kakao.cafe.controller;
 
 import com.kakao.cafe.global.exception.ErrorCode;
+import com.kakao.cafe.order.dto.OrderHistoryDto;
 import org.json.JSONObject;
-import org.junit.Test;
-import org.junit.jupiter.api.DisplayName;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.*;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
-import org.springframework.test.context.junit4.SpringRunner;
+import org.springframework.test.context.event.ApplicationEvents;
+import org.springframework.test.context.event.RecordApplicationEvents;
+import org.springframework.test.context.junit.jupiter.SpringExtension;
 import org.springframework.test.web.servlet.MockMvc;
 
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @AutoConfigureMockMvc
-@SpringBootTest
-@RunWith(SpringRunner.class)
+@TestMethodOrder(MethodOrderer.OrderAnnotation.class)
+@RecordApplicationEvents
+@ExtendWith(SpringExtension.class)
+@SpringBootTest(webEnvironment = SpringBootTest.WebEnvironment.RANDOM_PORT)
 public class OrderControllerTest {
 
     @Autowired
     private MockMvc mvc;
+
+    @Autowired
+    private ApplicationEvents events;
+
+    @Test
+    @Order(1)
+    @DisplayName("주문 성공 후, 수집서버 호출 검증")
+    public void 주문_API_테스트_수집서버_전송_테스트() throws Exception {
+
+        JSONObject jsonObject = new JSONObject();
+        jsonObject.put("userId", "jiho");
+        jsonObject.put("menuItemId", "1");
+
+        mvc.perform(
+                post("/order/make-payment")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(jsonObject.toString()));
+
+        int count = (int) events.stream(OrderHistoryDto.class).count(); // Record 된 주문 내역 전송 Event Count
+        assertEquals(1, count);
+    }
 
     @Test
     @DisplayName("주문 API 테스트 정상")
@@ -79,7 +105,7 @@ public class OrderControllerTest {
 
     @Test
     @DisplayName("주문 API 테스트 검증")
-    public void 주문_API_테스트_필드_껌증() throws Exception {
+    public void 주문_API_테스트_필드_검증() throws Exception {
 
         JSONObject jsonObject = new JSONObject();
         jsonObject.put("userId", "");

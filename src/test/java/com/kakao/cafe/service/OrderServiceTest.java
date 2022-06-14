@@ -10,22 +10,23 @@ import com.kakao.cafe.order.service.OrderService;
 import com.kakao.cafe.point.domain.Point;
 import com.kakao.cafe.point.domain.PointWallet;
 import com.kakao.cafe.point.service.PointService;
-import org.junit.Assert;
-import org.junit.Test;
 import org.junit.jupiter.api.DisplayName;
-import org.junit.runner.RunWith;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
-import org.mockito.junit.MockitoJUnitRunner;
+import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.test.util.ReflectionTestUtils;
 
 import static java.util.Optional.ofNullable;
+import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.BDDMockito.given;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.when;
 
-@RunWith(MockitoJUnitRunner.class)
+@ExtendWith(MockitoExtension.class)
 public class OrderServiceTest {
 
     @InjectMocks
@@ -78,14 +79,16 @@ public class OrderServiceTest {
         // mocking
         when(menuService.findByMenuId(any())).thenReturn(menuItem);
         when(customerService.findByUserId(any())).thenReturn(customer);
-        when(orderRepository.findById(any())).thenReturn(ofNullable(order));
+        lenient().when(orderRepository.findById(any())).thenReturn(ofNullable(order));
         given(orderRepository.save(any())).willReturn(order);
 
         // when
         Order makeOrder = orderService.makeOrderProcess("jiho", 1L);
 
         // then
-        Assert.assertEquals(makeOrder.cost(), menuService.findByMenuId(1L).getPrice());
+        assertEquals(makeOrder.cost(), menuService.findByMenuId(1L).getPrice());
     }
+
+
 
 }
