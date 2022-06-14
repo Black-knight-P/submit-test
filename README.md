@@ -83,7 +83,7 @@ $ java -jar build/libs/kakaopay-cafe-hw-0.0.1-SNAPSHOT.jar
 ## 구현 내용과 해결 전략
 
 - 동시성 이슈와 데이터 일관성의 처리를 위해 고객 포인트의 충전과 차감 거래시, Transaction 격리 수준을 고려하여 구현하였다.
-- 주문 내역에 대한 실시간 전송에 대해서 이벤트 기반 비동기 처리로 구현하였다.
+- 주문 내역에 대한 외부 수집서버 실시간 전송에 대해서 이벤트 기반 비동기 처리로 구현하였다.
 
 ### 1. 커피 메뉴 목록 조회 API
 
@@ -139,7 +139,7 @@ public class MenuService {
     private final MenuItemRepository menuItemRepositor
     private final MenuCustomQueryRepository menuCustom
     
-		/***
+	/***
      * 판매중인 메뉴 전체를 조회한다.
      * @return List<MenuItem>
      */
@@ -165,8 +165,8 @@ POST /point/charge HTTP/1.1
 
 ```json
 {
-		"userId" : "jiho", 
-		"points" : 100000
+	"userId" : "jiho", 
+	"points" : 100000
 }
 ```
 
@@ -225,11 +225,15 @@ POST /order/make HTTP/1.1
     "code": "E1001",
     "status": 403
 }
+```
+```json
 {
     "message": "해당 회원이 존재하지 않습니다.",
     "code": "E0001",
     "status": 404
 }
+```
+```json
 {
     "message": "해당 메뉴는 존재하지 않습니다.",
     "code": "E2001",
@@ -247,45 +251,54 @@ POST /order/make HTTP/1.1
 ```
 
 - 동시성 이슈와 데이터의 일관성을 처리 하기 위해, 포인트 차감시에는 Transaction의 isolation을 `REPEATABLE_READ` 로 설정하였다.
+- 정상 주문 건에 대한 수집 서버 전송을 위해 `Event 기반`으로 `비동기` 처리하였다.
+    - 수집서버 전송이 주문 및 결제 거래 Transaction에 영향이 없도록 구현하였다.
+    - 수집서버 전송 에러시, 구매 이력을 파일로 남겨 후행 처리가 가능 하도록 구현하였다.
+  
 
+- 주문 처리 Service Code
 ```java
+@Slf4j
 @RequiredArgsConstructor
 @Transactional(readOnly = true)
 @Service
 public class OrderService {
 
-    private final CustomerService customerService;
-    private final PointService pointService;
-    private final MenuService menuService;
+  private final CustomerService customerService;
+  private final PointService pointService;
+  private final MenuService menuService;
 
-    private final OrderRepository orderRepository;
+  private final OrderRepository orderRepository;
 
-    private final ApplicationEventPublisher applicationEventPublisher;
+  private final ApplicationEventPublisher applicationEventPublisher;
 
-    @Transactional(isolation = Isolation.REPEATABLE_READ)
-    public Order makeOrder(String userId, Long menuId) throws Exception {
-        Customer customer = customerService.findByUserId(userId);
-        MenuItem orderedMenu = menuService.findByMenuId(menuId);
-        Order order = Order.builder()
-                .customer(customer)
-                .menuItem(orderedMenu)
-                .build();
+  @Transactional(isolation = Isolation.REPEATABLE_READ)
+  public Order makeOrderProcess(String userId, Long menuId) throws Exception {
+    Customer customer = customerService.findByUserId(userId);
+    MenuItem orderedMenu = menuService.findByMenuId(menuId);
+    Order order = Order.builder()
+            .customer(customer)
+            .menuItem(orderedMenu)
+            .build();
 
-        // 포인트 차감 처리
-        pointService.deduct(customer,order);
+    // 포인트 차감 처리
+    pointService.deduct(userId, order.cost());
+    Order completedOrder = orderRepository.save(order);
 
-        // 수집 플랫폼 서버 전송 이벤트 처리
-        applicationEventPublisher.publishEvent(order);
+    log.debug("Make Order Process COMPLETE : {}", completedOrder);
 
-        return orderRepository.save(order);
-    }
+    // 수집 플랫폼 서버 전송 비동기 이벤트 처리
+    applicationEventPublisher.publishEvent(OrderHistoryDto.builder()
+            .userId(userId)
+            .price(order.cost())
+            .menuName(orderedMenu.getName())
+            .build());
+
+    return completedOrder;
+  }
 }
 ```
-
-- 정상 주문 건에 대한 수집 서버 전송을 위해 `Event 기반`으로 `비동기` 처리하였다.
-    - 수집서버 전송이 주문 및 결제 거래 Transaction에 영향이 없도록 구현하였다.
-    - 수집서버 전송 에러시, 구매 이력을 파일로 남겨 후행 처리가 가능 하도록 구현하였다.
-
+- 비동기 이벤트 처리 리스너
 ```java
 @Slf4j
 @RequiredArgsConstructor
@@ -296,23 +309,18 @@ public class OrderEventHandler {
 
     /**
      * 집계서버 전송을 위한 비동기 Event Listener
-     * @param order
+     * @param history
      */
     @Async
-    @TransactionalEventListener
-    public void orderCompleteEventListener(Order order) {
-        OrderDto.OrderHistory dto = OrderDto.OrderHistory.builder()
-                .userId(order.customerUserId())
-                .price(order.cost())
-                .menuName(order.saleMenuName())
-                .build();
+    @TransactionalEventListener(phase = TransactionPhase.AFTER_COMMIT, classes = OrderHistoryDto.class)
+    public void orderCompleteEventListener(OrderHistoryDto history) {
         try {
-            log.debug("SEND Collection Server Event Listen : {}", dto);
-            messageService.sendCollectionServer(dto);
-        } catch (Exception e) { // 전송 실패시, Deferred File 처리. (후행 처리 목적)
+            log.debug("SEND Collection Server Event Listen : {}", history);
+            messageService.sendCollectionServer(history);
+        } catch (Exception e) { // 전송 실패시, Deferred File 처리. (실패건 후행 처리 목적)
             log.error("Collection Server Send Fail!, Write Deferred File ");
             e.printStackTrace();
-            messageService.writeDeferredFile(dto);
+            messageService.writeDeferredFile(history);
         }
     }
 }
@@ -325,7 +333,6 @@ public class OrderEventHandler {
 ```
 http://localhost:8080/menu/popular-coffee
 ```
-
 ```
 GET /menu/popular-coffee HTTP/1.1
 ```
@@ -392,11 +399,11 @@ public class MenuCustomQueryRepository {
 ### Swagger API 테스트 방법
 - Spring Appication 구동 후, [Swagger](http://localhost:8080/swagger-ui/index.html) 접속 ([http://localhost:8080/swagger-ui/index.html](http://localhost:8080/swagger-ui/index.html))
 
-![Sagger](img/swagger.png)
+![Swagger](img/swagger.png)
 
 ### IntelliJ 테스트코드 실행 오류 발생시,
 - Preferences → Build,Execution, Deployment → Build Tools → Gradle 설정 변경
-![intellJ-setting](img/intelliJ-setting.png)
+![intelliJ-setting](img/intelliJ-setting.png)
 
 ## 체크 리스트
 

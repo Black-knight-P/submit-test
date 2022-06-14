@@ -33,7 +33,7 @@ public class OrderControllerTest {
         jsonObject.put("menuItemId", "1");
 
         mvc.perform(
-                post("/order/make")
+                post("/order/make-payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonObject.toString()))
                 .andExpect(status().isOk())
@@ -50,7 +50,7 @@ public class OrderControllerTest {
         jsonObject.put("menuItemId", "5");
 
         mvc.perform(
-                post("/order/make")
+                post("/order/make-payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonObject.toString()))
                 .andExpect(status().is4xxClientError())
@@ -68,7 +68,7 @@ public class OrderControllerTest {
         jsonObject.put("menuItemId", "1");
 
         mvc.perform(
-                post("/order/make")
+                post("/order/make-payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonObject.toString()))
                 .andExpect(status().is4xxClientError())
@@ -86,7 +86,7 @@ public class OrderControllerTest {
         jsonObject.put("menuItemId", 1);
 
         mvc.perform(
-                post("/order/make")
+                post("/order/make-payment")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(jsonObject.toString()))
                 .andExpect(status().is4xxClientError())
